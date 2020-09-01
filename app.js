@@ -17,20 +17,15 @@ const itemSchema = {
 //Item collection and the schema to create collection
 const Item = mongoose.model("Item", itemSchema);
 
-const toDoList = ["apply", "study"];
-
 const port = 3000;
 
-
-
-app.get('/', (req, res) => {
+async function addDefaultDb(){
   const item1 = new Item({
     name: "apply"
   });
   const item2 = new Item({
     name: "study"
   });
-
   Item.insertMany([item1, item2], function(err){
     if(err){
       console.log(err);
@@ -38,15 +33,54 @@ app.get('/', (req, res) => {
     else{
       console.log("Successfully add default items to database");
     }
-  })
-  res.render("list", {day: dateTime, toDoList: toDoList});
+  });
+}
+
+app.get('/', (req, res) => {
+
+  Item.find({}, function(err, results){
+    if(err){
+      console.log(err);
+    }
+    else{
+      if(results.length == 0){
+        addDefaultDb();
+        setTimeout(function(){
+          res.redirect("/");
+        }, 200);
+        
+      }
+      else
+        res.render("list", {day: dateTime, toDoList: results});
+    }
+  });
+  
   // res.sendFile("index.html");
 });
 
 app.post('/', (req, res) =>{
   // res.send('POST request to the homepage')
-  toDoList.push(req.body.newItem);
-  res.render("list", {day: dateTime, toDoList: toDoList});
+  const item = new Item({
+    name: req.body.newItem
+  });
+  item.save();
+  res.redirect("/");
+  // toDoList.push(req.body.newItem);
+  // res.render("list", {day: dateTime, toDoList: toDoList});
+});
+
+app.post('/delete', (req, res) => {
+  // console.log(req.body);
+  const checkedItemId = req.body.checkbox;
+  Item.findByIdAndRemove(checkedItemId, function(err){
+    if(err){
+      console.log(err);
+    }
+    else{
+      console.log("Successful remove item");
+      res.redirect("/");
+    }
+  })
 });
 
 app.listen(port, () => {
