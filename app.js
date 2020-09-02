@@ -58,7 +58,7 @@ app.get('/', (req, res) => {
         
       }
       else
-        res.render("list", {day: dateTime, toDoList: results});
+        res.render("list", {day: dateTime, toDoList: results, listTitle: "default"});
     }
   });
   
@@ -67,22 +67,52 @@ app.get('/', (req, res) => {
 
 app.get("/:customListName", (req, res) => {
   const customListName = req.params.customListName;
-  const list = new List({
-    name: customListName,
-    item = defaultItems
+
+  List.findOne({name: customListName}, function(err, result){
+    if(err){
+      console.log(err);
+    }
+    else{
+      if(!result){
+        const list = new List({
+          name: customListName,
+          item : defaultItems
+        });
+        list.save();
+        result = list;
+        // res.render("list", {day: dateTime + ". You are in the list: " + list.name, toDoList: list.items});
+      }
+      res.render("list", {day: dateTime + ". You are in the list: " + result.name, toDoList: result.items, listTitle: result.name});
+    }
   });
-  list.save();
-  res.send(list);
 });
 
 
 app.post('/', (req, res) =>{
   // res.send('POST request to the homepage')
+  const listTitle = req.body.list;
+  // console.log(listTitle);
   const item = new Item({
     name: req.body.newItem
   });
-  item.save();
-  res.redirect("/");
+  if(listTitle === "default"){
+    item.save();
+    res.redirect("/");
+  }
+  else{
+    List.findOne({name: listTitle}, function(err, result){
+      if(err){
+        console.log(err);
+      }
+      else{
+        // console.log(result);
+        result.items.push(item);
+        result.save();
+        res.redirect("/" + listTitle);
+      }
+    });
+  }
+  
   // toDoList.push(req.body.newItem);
   // res.render("list", {day: dateTime, toDoList: toDoList});
 });
