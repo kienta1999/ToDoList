@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const dateTime = require(__dirname + "/date.js");
+const _ = require("lodash");
 
 app.set('view engine', 'ejs');
 mongoose.connect("mongodb://localhost:27017/todolistDB",  { useNewUrlParser: true,  useUnifiedTopology: true});
@@ -66,7 +67,7 @@ app.get('/', (req, res) => {
 });
 
 app.get("/:customListName", (req, res) => {
-  const customListName = req.params.customListName;
+  const customListName = _.capitalize(req.params.customListName);
 
   List.findOne({name: customListName}, function(err, result){
     if(err){
@@ -91,7 +92,7 @@ app.get("/:customListName", (req, res) => {
 app.post('/', (req, res) =>{
   // res.send('POST request to the homepage')
   const listTitle = req.body.list;
-  // console.log(listTitle);
+
   const item = new Item({
     name: req.body.newItem
   });
@@ -118,17 +119,36 @@ app.post('/', (req, res) =>{
 });
 
 app.post('/delete', (req, res) => {
-  // console.log(req.body);
   const checkedItemId = req.body.checkbox;
-  Item.findByIdAndRemove(checkedItemId, function(err){
-    if(err){
-      console.log(err);
-    }
-    else{
-      console.log("Successful remove item");
-      res.redirect("/");
-    }
-  })
+  const listName = req.body.listName;
+
+  if(listName == "default"){
+    Item.findByIdAndRemove(checkedItemId, function(err){
+      if(err){
+        console.log(err);
+      }
+      else{
+        console.log("Successful remove item");
+        res.redirect("/");
+      }
+    })
+  }
+  else{
+    console.log(listName);
+    List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, function(err, results){
+      //pull from items array the item with specific id
+      if(!err){
+        // results.save();
+        // console.log(results);
+        // console.log(checkedItemId);
+        res.redirect("/" + listName);
+      }
+      else{
+        console.log(err);
+      }
+    })
+  }
+  
 });
 
 app.listen(port, () => {

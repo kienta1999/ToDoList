@@ -16,7 +16,8 @@
         <form action="/delete" method="post">
             <div class="item">
                 <input type="checkbox" onChange="this.form.submit()" name = "checkbox" value = "<%= toDoList[i]._id %>">
-                <p class="listItem"> <%= toDoList[i].name %> </p>           
+                <p class="listItem"> <%= toDoList[i].name %> </p>
+                <input type="hidden" name="listName" value = "<%= listTitle %>"> 
             </div>  
         </form>
         <% } %>
